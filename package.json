@@ -1,0 +1,9 @@
+{
+  "dependencies": {
+    "convex": "^1.16.0",
+    "@clerk/backend": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0"
+  }
+}
