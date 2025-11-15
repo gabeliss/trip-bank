@@ -7,6 +7,7 @@ struct Trip: Identifiable, Codable {
     var startDate: Date
     var endDate: Date
     var coverImageName: String?
+    var coverImageStorageId: String?
     var mediaItems: [MediaItem]
     var moments: [Moment]
 
@@ -15,6 +16,7 @@ struct Trip: Identifiable, Codable {
          startDate: Date = Date(),
          endDate: Date = Date(),
          coverImageName: String? = nil,
+         coverImageStorageId: String? = nil,
          mediaItems: [MediaItem] = [],
          moments: [Moment] = []) {
         self.id = id
@@ -22,6 +24,7 @@ struct Trip: Identifiable, Codable {
         self.startDate = startDate
         self.endDate = endDate
         self.coverImageName = coverImageName
+        self.coverImageStorageId = coverImageStorageId
         self.mediaItems = mediaItems
         self.moments = moments
     }

@@ -40,6 +40,7 @@ class TripStore: ObservableObject {
                         startDate: Date(timeIntervalSince1970: convexTrip.startDate / 1000),
                         endDate: Date(timeIntervalSince1970: convexTrip.endDate / 1000),
                         coverImageName: convexTrip.coverImageName,
+                        coverImageStorageId: convexTrip.coverImageStorageId,
                         mediaItems: mediaItems,
                         moments: moments
                     )
@@ -113,7 +114,8 @@ class TripStore: ObservableObject {
                     title: trip.title,
                     startDate: trip.startDate,
                     endDate: trip.endDate,
-                    coverImageName: trip.coverImageName
+                    coverImageName: trip.coverImageName,
+                    coverImageStorageId: trip.coverImageStorageId
                 )
 
                 // Update local state
@@ -152,6 +154,14 @@ class TripStore: ObservableObject {
                         note: mediaItem.note,
                         timestamp: mediaItem.timestamp
                     )
+                }
+
+                // Reload trip to get updated cover image (backend auto-sets it for first photo)
+                if let tripDetails = try await convexClient.getTrip(id: tripID.uuidString) {
+                    if let index = trips.firstIndex(where: { $0.id == tripID }) {
+                        trips[index].coverImageStorageId = tripDetails.trip.coverImageStorageId
+                        trips[index].coverImageName = tripDetails.trip.coverImageName
+                    }
                 }
             } catch {
                 errorMessage = "Failed to add media items: \(error.localizedDescription)"

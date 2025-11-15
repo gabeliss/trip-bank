@@ -142,7 +142,7 @@ class ConvexClient {
         return try await callMutation("trips:createTrip", args: args)
     }
 
-    func updateTrip(id: String, title: String? = nil, startDate: Date? = nil, endDate: Date? = nil, coverImageName: String? = nil) async throws -> String {
+    func updateTrip(id: String, title: String? = nil, startDate: Date? = nil, endDate: Date? = nil, coverImageName: String? = nil, coverImageStorageId: String? = nil) async throws -> String {
         var args: [String: Any] = [
             "tripId": id
         ]
@@ -158,6 +158,9 @@ class ConvexClient {
         }
         if let coverImageName = coverImageName {
             args["coverImageName"] = coverImageName
+        }
+        if let coverImageStorageId = coverImageStorageId {
+            args["coverImageStorageId"] = coverImageStorageId
         }
 
         return try await callMutation("trips:updateTrip", args: args)
@@ -510,6 +513,7 @@ struct ConvexTrip: Decodable {
     let startDate: Double
     let endDate: Double
     let coverImageName: String?
+    let coverImageStorageId: String?
     let createdAt: Double
     let updatedAt: Double
 }

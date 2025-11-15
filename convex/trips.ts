@@ -128,10 +128,8 @@ export const deleteTrip = mutation({
       await ctx.db.delete(moment._id);
     }
 
-    // Delete cover image from storage if it exists
-    if (trip.coverImageStorageId) {
-      await ctx.storage.delete(trip.coverImageStorageId);
-    }
+    // Note: Cover image is already deleted as part of media items above
+    // (coverImageStorageId points to a media item's storageId)
 
     // Delete the trip itself
     await ctx.db.delete(trip._id);
@@ -173,6 +171,22 @@ export const addMediaItem = mutation({
       createdAt: now,
       updatedAt: now,
     });
+
+    // Automatically set cover image if this is the first photo added to the trip
+    if (args.type === "photo" && args.storageId) {
+      const trip = await ctx.db
+        .query("trips")
+        .withIndex("by_tripId", (q) => q.eq("tripId", args.tripId))
+        .first();
+
+      if (trip && !trip.coverImageStorageId) {
+        await ctx.db.patch(trip._id, {
+          coverImageStorageId: args.storageId,
+          coverImageName: args.mediaItemId,
+          updatedAt: now,
+        });
+      }
+    }
 
     return mediaItemDocId;
   },

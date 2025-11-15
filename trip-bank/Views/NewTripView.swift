@@ -10,9 +10,16 @@ struct NewTripView: View {
     @State private var endDate = Date()
     @State private var isCreating = false
     @State private var showError = false
+    @State private var selectedCoverImageStorageId: String?
+    @State private var showingCoverImagePicker = false
 
     private var isEditing: Bool {
         trip != nil
+    }
+
+    // Get the latest version of the trip from the store (for media items)
+    private var currentTrip: Trip {
+        tripStore.trips.first(where: { $0.id == trip?.id }) ?? trip ?? Trip(title: "")
     }
 
     var body: some View {
@@ -31,11 +38,43 @@ struct NewTripView: View {
                     Text("Dates")
                 }
 
+                // Cover Image section (only when editing and trip has media items)
+                if isEditing && !currentTrip.mediaItems.isEmpty {
+                    Section {
+                        Button {
+                            showingCoverImagePicker = true
+                        } label: {
+                            HStack {
+                                Text("Cover Image")
+                                    .foregroundStyle(.primary)
+
+                                Spacer()
+
+                                if let storageId = selectedCoverImageStorageId,
+                                   let mediaItem = currentTrip.mediaItems.first(where: { $0.storageId == storageId }) {
+                                    MediaImageView(mediaItem: mediaItem)
+                                        .scaledToFill()
+                                        .frame(width: 60, height: 60)
+                                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                                } else {
+                                    Image(systemName: "photo")
+                                        .foregroundStyle(.secondary)
+                                        .frame(width: 60, height: 60)
+                                }
+
+                                Image(systemName: "chevron.right")
+                                    .foregroundStyle(.secondary)
+                                    .font(.caption)
+                            }
+                        }
+                    }
+                }
+
                 if isCreating {
                     Section {
                         HStack {
                             ProgressView()
-                            Text("Creating trip...")
+                            Text(isEditing ? "Saving..." : "Creating trip...")
                                 .foregroundColor(.secondary)
                         }
                     }
@@ -48,7 +87,14 @@ struct NewTripView: View {
                     title = trip.title
                     startDate = trip.startDate
                     endDate = trip.endDate
+                    selectedCoverImageStorageId = trip.coverImageStorageId
                 }
+            }
+            .sheet(isPresented: $showingCoverImagePicker) {
+                CoverImagePicker(
+                    mediaItems: currentTrip.mediaItems,
+                    selectedStorageId: $selectedCoverImageStorageId
+                )
             }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -112,6 +158,12 @@ struct NewTripView: View {
         updatedTrip.title = title
         updatedTrip.startDate = startDate
         updatedTrip.endDate = endDate
+        updatedTrip.coverImageStorageId = selectedCoverImageStorageId
+        // Update coverImageName to match the selected media item
+        if let storageId = selectedCoverImageStorageId,
+           let mediaItem = currentTrip.mediaItems.first(where: { $0.storageId == storageId }) {
+            updatedTrip.coverImageName = mediaItem.id.uuidString
+        }
 
         tripStore.updateTrip(updatedTrip)
 

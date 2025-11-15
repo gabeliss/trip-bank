@@ -47,9 +47,9 @@ struct TripCardView: View {
 
     @ViewBuilder
     private var coverImage: some View {
-        if let coverImageName = trip.coverImageName {
-            Image(coverImageName)
-                .resizable()
+        if let coverImageStorageId = trip.coverImageStorageId,
+           let mediaItem = trip.mediaItems.first(where: { $0.storageId == coverImageStorageId }) {
+            MediaImageView(mediaItem: mediaItem)
                 .scaledToFill()
         } else {
             Rectangle()
