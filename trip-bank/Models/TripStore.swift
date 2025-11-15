@@ -249,12 +249,18 @@ class TripStore: ObservableObject {
     func deleteMediaItem(from tripID: UUID, mediaItemID: UUID) {
         Task {
             do {
-                // Delete from backend
+                // Delete from backend (also removes from moments via cascade)
                 _ = try await convexClient.deleteMediaItem(id: mediaItemID.uuidString)
 
                 // Update local state
                 if let tripIndex = trips.firstIndex(where: { $0.id == tripID }) {
+                    // Remove media item
                     trips[tripIndex].mediaItems.removeAll { $0.id == mediaItemID }
+
+                    // Remove from all moments that reference it
+                    for momentIndex in trips[tripIndex].moments.indices {
+                        trips[tripIndex].moments[momentIndex].mediaItemIDs.removeAll { $0 == mediaItemID }
+                    }
                 }
             } catch {
                 errorMessage = "Failed to delete media item: \(error.localizedDescription)"

@@ -8,7 +8,6 @@ struct ManageMediaView: View {
 
     @State private var selectedMediaItem: MediaItem?
     @State private var showingDeleteConfirmation = false
-    @State private var showingEditSheet = false
 
     // Get the latest version of the trip from the store
     private var currentTrip: Trip {
@@ -25,24 +24,13 @@ struct ManageMediaView: View {
                         GridItem(.adaptive(minimum: 100), spacing: 12)
                     ], spacing: 12) {
                         ForEach(currentTrip.mediaItems) { mediaItem in
-                            MediaItemTile(mediaItem: mediaItem)
-                                .contextMenu {
-                                    Button {
-                                        selectedMediaItem = mediaItem
-                                        showingEditSheet = true
-                                    } label: {
-                                        Label("Edit", systemImage: "pencil")
-                                    }
-
-                                    Divider()
-
-                                    Button(role: .destructive) {
-                                        selectedMediaItem = mediaItem
-                                        showingDeleteConfirmation = true
-                                    } label: {
-                                        Label("Delete", systemImage: "trash")
-                                    }
+                            MediaItemTile(
+                                mediaItem: mediaItem,
+                                onDelete: {
+                                    selectedMediaItem = mediaItem
+                                    showingDeleteConfirmation = true
                                 }
+                            )
                         }
                     }
                     .padding()
@@ -64,11 +52,6 @@ struct ManageMediaView: View {
                 }
             } message: {
                 Text("This photo will be removed from all moments and permanently deleted.")
-            }
-            .sheet(isPresented: $showingEditSheet) {
-                if let mediaItem = selectedMediaItem {
-                    EditMediaItemView(trip: trip, mediaItem: mediaItem)
-                }
             }
         }
     }
@@ -97,13 +80,34 @@ struct ManageMediaView: View {
 // Tile view for a media item in the grid
 struct MediaItemTile: View {
     let mediaItem: MediaItem
+    let onDelete: () -> Void
 
     var body: some View {
-        MediaImageView(mediaItem: mediaItem)
-            .id(mediaItem.id)
-            .scaledToFill()
-            .frame(width: 100, height: 100)
-            .clipShape(RoundedRectangle(cornerRadius: 8))
+        ZStack {
+            MediaImageView(mediaItem: mediaItem)
+                .id(mediaItem.id)
+                .scaledToFill()
+                .frame(width: 100, height: 100)
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+
+            // Delete button (top-right corner)
+            VStack {
+                HStack {
+                    Spacer()
+                    Button {
+                        onDelete()
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundStyle(.white, .red)
+                            .font(.title3)
+                            .shadow(radius: 2)
+                    }
+                    .padding(4)
+                }
+                Spacer()
+            }
+        }
+        .frame(width: 100, height: 100)
     }
 }
 

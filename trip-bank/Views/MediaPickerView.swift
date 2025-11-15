@@ -40,6 +40,8 @@ struct MediaPickerView: View {
                         }
                     } onSelectDifferent: {
                         state = .selectingFromLibrary
+                    } onRemove: { index in
+                        removeItem(at: index, from: media)
                     }
 
                 case .uploading(let current, let total):
@@ -94,6 +96,19 @@ struct MediaPickerView: View {
         }
     }
 
+    private func removeItem(at index: Int, from media: [SelectedMediaItem]) {
+        var updatedMedia = media
+        updatedMedia.remove(at: index)
+
+        if updatedMedia.isEmpty {
+            // If all items removed, go back to selection
+            state = .selectingFromLibrary
+        } else {
+            // Update preview with remaining items
+            state = .previewing(updatedMedia)
+        }
+    }
+
     private func uploadMedia(_ media: [SelectedMediaItem]) async {
         let convexClient = ConvexClient.shared
         var newMediaItems: [MediaItem] = []
@@ -139,13 +154,14 @@ struct PreviewView: View {
     let media: [SelectedMediaItem]
     let onUpload: () -> Void
     let onSelectDifferent: () -> Void
+    let onRemove: (Int) -> Void
 
     var body: some View {
         VStack(spacing: 16) {
             ScrollView(.horizontal) {
                 HStack(spacing: 12) {
                     ForEach(media.indices, id: \.self) { index in
-                        ZStack(alignment: .bottomTrailing) {
+                        ZStack {
                             if let image = media[index].image {
                                 Image(uiImage: image)
                                     .resizable()
@@ -154,14 +170,39 @@ struct PreviewView: View {
                                     .clipShape(RoundedRectangle(cornerRadius: 8))
                             }
 
+                            // Video play icon (bottom-trailing)
                             if media[index].isVideo {
-                                Image(systemName: "play.circle.fill")
-                                    .foregroundStyle(.white)
-                                    .font(.title2)
-                                    .shadow(radius: 2)
+                                VStack {
+                                    Spacer()
+                                    HStack {
+                                        Spacer()
+                                        Image(systemName: "play.circle.fill")
+                                            .foregroundStyle(.white)
+                                            .font(.title2)
+                                            .shadow(radius: 2)
+                                            .padding(4)
+                                    }
+                                }
+                            }
+
+                            // Remove button (top-trailing)
+                            VStack {
+                                HStack {
+                                    Spacer()
+                                    Button {
+                                        onRemove(index)
+                                    } label: {
+                                        Image(systemName: "xmark.circle.fill")
+                                            .foregroundStyle(.white, .red)
+                                            .font(.title3)
+                                            .shadow(radius: 2)
+                                    }
                                     .padding(4)
+                                }
+                                Spacer()
                             }
                         }
+                        .frame(width: 100, height: 100)
                     }
                 }
                 .padding()

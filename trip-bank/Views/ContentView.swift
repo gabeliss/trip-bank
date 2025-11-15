@@ -48,7 +48,7 @@ struct ContentView: View {
                     }
                 }
 
-                ToolbarItem(placement: .secondaryAction) {
+                ToolbarItem(placement: .navigationBarTrailing) {
                     Menu {
                         Button {
                             Task {
@@ -57,8 +57,6 @@ struct ContentView: View {
                         } label: {
                             Label("Refresh", systemImage: "arrow.clockwise")
                         }
-
-                        Divider()
 
                         Button(role: .destructive) {
                             Task {

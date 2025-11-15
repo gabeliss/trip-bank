@@ -326,6 +326,24 @@ export const deleteMediaItem = mutation({
       throw new Error("Unauthorized: You don't own this media item");
     }
 
+    // Remove this media item from all moments that reference it
+    const moments = await ctx.db
+      .query("moments")
+      .withIndex("by_tripId", (q) => q.eq("tripId", mediaItem.tripId))
+      .collect();
+
+    for (const moment of moments) {
+      if (moment.mediaItemIDs.includes(args.mediaItemId)) {
+        const updatedMediaItemIDs = moment.mediaItemIDs.filter(
+          (id) => id !== args.mediaItemId
+        );
+        await ctx.db.patch(moment._id, {
+          mediaItemIDs: updatedMediaItemIDs,
+          updatedAt: Date.now(),
+        });
+      }
+    }
+
     // Delete file from storage if it exists
     if (mediaItem.storageId) {
       await ctx.storage.delete(mediaItem.storageId);

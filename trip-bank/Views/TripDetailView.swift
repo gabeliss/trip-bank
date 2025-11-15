@@ -49,25 +49,20 @@ struct TripDetailView: View {
                 }
             }
 
-            ToolbarItem(placement: .secondaryAction) {
+            ToolbarItem(placement: .navigationBarTrailing) {
                 Menu {
-                    if !currentTrip.mediaItems.isEmpty {
-                        Button {
-                            showingManageMedia = true
-                        } label: {
-                            Label("Manage Photos", systemImage: "photo.stack")
-                        }
-
-                        Divider()
+                    Button {
+                        showingManageMedia = true
+                    } label: {
+                        Label("Manage Photos", systemImage: "photo.stack")
                     }
+                    .disabled(currentTrip.mediaItems.isEmpty)
 
                     Button {
                         showingEditTrip = true
                     } label: {
                         Label("Edit Trip", systemImage: "pencil")
                     }
-
-                    Divider()
 
                     Button(role: .destructive) {
                         showingDeleteConfirmation = true

@@ -52,23 +52,26 @@ struct CreateMomentView: View {
                         Text("No media available. Add photos first.")
                             .foregroundStyle(.secondary)
                     } else {
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(spacing: 12) {
-                                ForEach(trip.mediaItems) { mediaItem in
-                                    MediaThumbnailView(
-                                        mediaItem: mediaItem,
-                                        isSelected: selectedMediaItems.contains(mediaItem.id),
-                                        onTap: {
-                                            if selectedMediaItems.contains(mediaItem.id) {
-                                                selectedMediaItems.remove(mediaItem.id)
-                                            } else {
-                                                selectedMediaItems.insert(mediaItem.id)
-                                            }
+                        LazyVGrid(columns: [
+                            GridItem(.flexible(), spacing: 12),
+                            GridItem(.flexible(), spacing: 12),
+                            GridItem(.flexible(), spacing: 12)
+                        ], spacing: 12) {
+                            ForEach(trip.mediaItems) { mediaItem in
+                                MediaThumbnailView(
+                                    mediaItem: mediaItem,
+                                    isSelected: selectedMediaItems.contains(mediaItem.id),
+                                    onTap: {
+                                        if selectedMediaItems.contains(mediaItem.id) {
+                                            selectedMediaItems.remove(mediaItem.id)
+                                        } else {
+                                            selectedMediaItems.insert(mediaItem.id)
                                         }
-                                    )
-                                }
+                                    }
+                                )
                             }
                         }
+                        .padding(.vertical, 8)
                     }
                 }
             }
