@@ -30,7 +30,7 @@ struct TripDetailView: View {
                 emptyMomentsState
             } else {
                 // Show spatial canvas with moments
-                TripCanvasView(tripId: trip.id)
+                TripCanvasView(trip: currentTrip)
             }
         }
         .navigationTitle(currentTrip.title)

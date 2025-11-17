@@ -2,7 +2,7 @@ import SwiftUI
 
 // Main grid-based canvas view for displaying trip moments
 struct TripCanvasView: View {
-    let tripId: UUID
+    let trip: Trip
     @EnvironmentObject var tripStore: TripStore
     @State private var selectedMoment: Moment?
     @State private var showingExpandedMoment = false
@@ -24,19 +24,19 @@ struct TripCanvasView: View {
     @State private var previewWidth: Double = 1
     @State private var previewHeight: Double = 1.5
 
-    // Get the latest version of the trip from the store
-    private var trip: Trip {
-        tripStore.trips.first(where: { $0.id == tripId }) ?? Trip(id: tripId, title: "Unknown")
+    // Get the latest version of the trip from the store (or use passed trip for shared trips)
+    private var currentTrip: Trip {
+        tripStore.trips.first(where: { $0.id == trip.id }) ?? trip
     }
 
     // Get trip with preview position applied during drag
     private var displayTrip: Trip {
         guard let draggingId = draggingMoment,
               let previewPos = previewGridPosition else {
-            return trip
+            return currentTrip
         }
 
-        var tempTrip = trip
+        var tempTrip = currentTrip
         if let momentIndex = tempTrip.moments.firstIndex(where: { $0.id == draggingId }) {
             var updatedMoment = tempTrip.moments[momentIndex]
             updatedMoment.gridPosition = previewPos
@@ -125,7 +125,7 @@ struct TripCanvasView: View {
                 ExpandedMomentView(
                     moment: moment,
                     mediaItems: mediaItemsForMoment(moment),
-                    tripId: tripId,
+                    tripId: trip.id,
                     isPresented: $showingExpandedMoment
                 )
             }
@@ -342,7 +342,7 @@ struct TripCanvasView: View {
 
         // Update moment locally and reflow
         var reflowedMoments: [Moment] = []
-        if let tripIndex = tripStore.trips.firstIndex(where: { $0.id == tripId }),
+        if let tripIndex = tripStore.trips.firstIndex(where: { $0.id == trip.id }),
            let momentIndex = tripStore.trips[tripIndex].moments.firstIndex(where: { $0.id == moment.id }) {
 
             // Update this moment's position
@@ -408,7 +408,7 @@ struct TripCanvasView: View {
 
     private func updatePreviewSize(for moment: Moment) {
         // Update moment size locally in real-time
-        if let tripIndex = tripStore.trips.firstIndex(where: { $0.id == tripId }),
+        if let tripIndex = tripStore.trips.firstIndex(where: { $0.id == trip.id }),
            let momentIndex = tripStore.trips[tripIndex].moments.firstIndex(where: { $0.id == moment.id }) {
 
             // Update this moment's size
@@ -432,7 +432,7 @@ struct TripCanvasView: View {
         Task {
             do {
                 // Get all reflowed moments
-                if let tripIndex = tripStore.trips.firstIndex(where: { $0.id == tripId }) {
+                if let tripIndex = tripStore.trips.firstIndex(where: { $0.id == trip.id }) {
                     let reflowedMoments = tripStore.trips[tripIndex].moments
 
                     _ = try await ConvexClient.shared.batchUpdateMomentGridPositions(moments: reflowedMoments)
