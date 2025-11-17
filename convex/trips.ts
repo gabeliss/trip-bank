@@ -772,17 +772,17 @@ export const getPublicPreview = query({
     const momentsWithUrls = await Promise.all(
       moments.map(async (moment, index) => {
         const mediaItems = momentMediaItems[index] || [];
-        const mediaUrls: (string | null)[] = [];
+        const media: Array<{ url: string | null; type: "photo" | "video" }> = [];
 
         // Get URLs for first 4 media items (for collage display)
         for (const mediaItem of mediaItems.slice(0, 4)) {
           if (mediaItem.storageId) {
             try {
               const url = await ctx.storage.getUrl(mediaItem.storageId);
-              mediaUrls.push(url);
+              media.push({ url, type: mediaItem.type });
             } catch (error) {
               console.error(`Failed to get URL for storage ID ${mediaItem.storageId}:`, error);
-              mediaUrls.push(null);
+              media.push({ url: null, type: mediaItem.type });
             }
           }
         }
@@ -792,7 +792,41 @@ export const getPublicPreview = query({
           title: moment.title,
           gridPosition: moment.gridPosition,
           mediaCount: mediaItems.length,
-          mediaUrls,
+          media,
+        };
+      })
+    );
+
+    // Get cover image URL
+    let coverImageUrl: string | null = null;
+    if (trip.coverImageStorageId) {
+      try {
+        coverImageUrl = await ctx.storage.getUrl(trip.coverImageStorageId);
+      } catch (error) {
+        console.error(`Failed to get cover image URL:`, error);
+      }
+    }
+
+    // Get collaborators/permissions for this trip
+    const permissions = await ctx.db
+      .query("tripPermissions")
+      .withIndex("by_tripId", (q) => q.eq("tripId", trip.tripId))
+      .collect();
+
+    // Get user info for each permission
+    const collaborators = await Promise.all(
+      permissions.map(async (permission) => {
+        const user = await ctx.db
+          .query("users")
+          .withIndex("by_clerkId", (q) => q.eq("clerkId", permission.userId))
+          .first();
+
+        return {
+          userId: permission.userId,
+          role: permission.role,
+          name: user?.name || null,
+          email: user?.email || null,
+          imageUrl: user?.imageUrl || null,
         };
       })
     );
@@ -805,11 +839,11 @@ export const getPublicPreview = query({
         endDate: trip.endDate,
         shareSlug: trip.shareSlug,
         shareCode: trip.shareCode,
-        coverImageStorageId: trip.coverImageStorageId,
-        previewImageStorageId: trip.previewImageStorageId,
+        coverImageUrl,
       },
       moments: momentsWithUrls,
       totalMoments: moments.length,
+      collaborators,
     };
   },
 });
