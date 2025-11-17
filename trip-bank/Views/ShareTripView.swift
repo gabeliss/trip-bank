@@ -207,6 +207,7 @@ struct ShareTripView: View {
         errorMessage = nil
 
         do {
+            // Generate share link
             shareInfo = try await ConvexClient.shared.generateShareLink(tripId: trip.id.uuidString)
         } catch {
             errorMessage = error.localizedDescription

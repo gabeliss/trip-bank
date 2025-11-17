@@ -32,17 +32,21 @@ class ConvexClient {
     private func getAuthToken() async -> String? {
         // Get token from Clerk with Convex template
         guard let session = await Clerk.shared.session else {
+            print("❌ [Convex] No Clerk session available")
             return nil
         }
 
         do {
             // Request token with Convex JWT template
             guard let tokenResource = try await session.getToken(.init(template: "convex")) else {
+                print("❌ [Convex] Token resource is nil - check if 'convex' JWT template exists in Clerk dashboard")
                 return nil
             }
+            print("✅ [Convex] Got auth token successfully")
             return tokenResource.jwt
         } catch {
             print("❌ [Convex] Failed to get Clerk token: \(error)")
+            print("❌ [Convex] Make sure 'convex' JWT template is configured in Clerk dashboard")
             return nil
         }
     }
@@ -142,7 +146,7 @@ class ConvexClient {
         return try await callMutation("trips:createTrip", args: args)
     }
 
-    func updateTrip(id: String, title: String? = nil, startDate: Date? = nil, endDate: Date? = nil, coverImageName: String? = nil, coverImageStorageId: String? = nil) async throws -> String {
+    func updateTrip(id: String, title: String? = nil, startDate: Date? = nil, endDate: Date? = nil, coverImageName: String? = nil, coverImageStorageId: String? = nil, previewImageStorageId: String? = nil) async throws -> String {
         var args: [String: Any] = [
             "tripId": id
         ]
@@ -161,6 +165,9 @@ class ConvexClient {
         }
         if let coverImageStorageId = coverImageStorageId {
             args["coverImageStorageId"] = coverImageStorageId
+        }
+        if let previewImageStorageId = previewImageStorageId {
+            args["previewImageStorageId"] = previewImageStorageId
         }
 
         return try await callMutation("trips:updateTrip", args: args)

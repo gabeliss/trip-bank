@@ -5,6 +5,13 @@ interface PageProps {
   params: Promise<{ slug: string }>;
 }
 
+interface GridPosition {
+  column: number; // 0 = left, 1 = right
+  row: number; // 0, 0.5, 1, 1.5, 2, 2.5, 3, etc.
+  width: number; // 1 or 2 (columns)
+  height: number; // 1, 1.5, 2, 2.5, 3, etc. (rows)
+}
+
 interface TripPreview {
   trip: {
     tripId: string;
@@ -14,12 +21,14 @@ interface TripPreview {
     shareSlug?: string;
     shareCode?: string;
     coverImageStorageId?: string;
+    previewImageStorageId?: string;
   };
   moments: Array<{
     momentId: string;
     title: string;
+    gridPosition?: GridPosition;
     mediaCount: number;
-    firstMediaStorageId?: string;
+    mediaUrls: (string | null)[];
   }>;
   totalMoments: number;
 }
@@ -29,6 +38,7 @@ async function getTripData(slug: string): Promise<TripPreview | null> {
     const data = await convex.query('trips:getPublicPreview' as any, {
       shareSlug: slug,
     });
+    console.log('📊 Trip data:', JSON.stringify(data, null, 2));
     return data as TripPreview | null;
   } catch (error) {
     console.error('Error fetching trip:', error);
@@ -117,9 +127,8 @@ export default async function TripPreviewPage({ params }: PageProps) {
 
       {/* Hero Section */}
       <div className="bg-white py-16">
-        <div className="max-w-4xl mx-auto px-6">
-          <div className="text-center mb-8">
-            {/* Icon */}
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="text-center mb-12">
             <div className="inline-flex items-center justify-center w-20 h-20 rounded-ios-lg bg-gradient-to-br from-ios-blue to-blue-600 mb-6">
               <svg className="w-11 h-11 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
@@ -155,6 +164,101 @@ export default async function TripPreviewPage({ params }: PageProps) {
             </div>
           </div>
 
+          {/* Masonry Canvas */}
+          {moments.length > 0 && (() => {
+            // Calculate canvas height based on moments
+            const ROW_HEIGHT_PX = 150;
+            const PADDING = 16;
+
+            const maxBottom = moments
+              .filter((m) => m.gridPosition)
+              .reduce((max, moment) => {
+                const { row, height } = moment.gridPosition!;
+                const bottom = (row + height) * ROW_HEIGHT_PX + PADDING;
+                return Math.max(max, bottom);
+              }, 0);
+
+            const canvasHeight = maxBottom + PADDING;
+
+            return (
+              <div className="mt-16 mb-12">
+                <div className="relative w-full border-2 border-gray-200 shadow-lg" style={{ height: `${canvasHeight}px` }}>
+                  <div className="absolute inset-0 bg-white p-4">
+                    {moments
+                      .filter((m) => m.gridPosition)
+                      .map((moment) => {
+                        const { column, row, width, height } = moment.gridPosition!;
+
+                        // Grid: 2 columns, each 50% wide
+                        // Rows: each row unit = 150px (adjust based on your iOS grid)
+                        const COLUMN_WIDTH_PERCENT = 50;
+                        const ROW_HEIGHT_PX = 150;
+
+                      return (
+                        <div
+                          key={moment.momentId}
+                          className="absolute rounded-[20px] overflow-hidden shadow-lg hover:shadow-2xl transition-shadow"
+                          style={{
+                            left: `calc(${column * COLUMN_WIDTH_PERCENT}% + 8px)`,
+                            top: `${row * ROW_HEIGHT_PX + 8}px`,
+                            width: `calc(${width * COLUMN_WIDTH_PERCENT}% - 16px)`,
+                            height: `${height * ROW_HEIGHT_PX - 16}px`,
+                          }}
+                        >
+                          {/* Collage layout matching iOS */}
+                          {moment.mediaUrls.length === 0 ? (
+                            <div className="w-full h-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center">
+                              <svg className="w-1/3 h-1/3 text-white opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                              </svg>
+                            </div>
+                          ) : moment.mediaUrls.length === 1 ? (
+                            // Single image - full size
+                            <img
+                              src={moment.mediaUrls[0]!}
+                              alt={moment.title}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : moment.mediaUrls.length === 2 ? (
+                            // 2 images - split vertically 50/50
+                            <div className="flex w-full h-full gap-[2px]">
+                              <img src={moment.mediaUrls[0]!} alt="" className="w-1/2 h-full object-cover" />
+                              <img src={moment.mediaUrls[1]!} alt="" className="w-1/2 h-full object-cover" />
+                            </div>
+                          ) : moment.mediaUrls.length === 3 ? (
+                            // 3 images - 60% left, 40% right (2 stacked)
+                            <div className="flex w-full h-full gap-[2px]">
+                              <img src={moment.mediaUrls[0]!} alt="" className="w-[60%] h-full object-cover" />
+                              <div className="flex flex-col w-[40%] h-full gap-[2px]">
+                                <img src={moment.mediaUrls[1]!} alt="" className="w-full h-1/2 object-cover" />
+                                <img src={moment.mediaUrls[2]!} alt="" className="w-full h-1/2 object-cover" />
+                              </div>
+                            </div>
+                          ) : (
+                            // 4+ images - 2x2 grid (first 4)
+                            <div className="grid grid-cols-2 grid-rows-2 w-full h-full gap-[2px]">
+                              {moment.mediaUrls.slice(0, 4).map((url, idx) => (
+                                url && <img key={idx} src={url} alt="" className="w-full h-full object-cover" />
+                              ))}
+                            </div>
+                          )}
+                          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3">
+                            <p className="text-white font-semibold text-sm line-clamp-1">
+                              {moment.title}
+                            </p>
+                            <p className="text-white/80 text-xs">
+                              {moment.mediaCount} {moment.mediaCount === 1 ? 'photo' : 'photos'}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                      })}
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+
           {/* CTA */}
           <div className="text-center">
             <a
@@ -172,37 +276,6 @@ export default async function TripPreviewPage({ params }: PageProps) {
           </div>
         </div>
       </div>
-
-      {/* Moments Preview */}
-      {moments.length > 0 && (
-        <div className="py-16">
-          <div className="max-w-4xl mx-auto px-6">
-            <h2 className="text-2xl font-bold mb-8 text-gray-900">
-              Moments Preview
-            </h2>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              {moments.map((moment) => (
-                <div
-                  key={moment.momentId}
-                  className="bg-white rounded-ios-lg p-6 shadow-sm"
-                >
-                  <div className="w-full aspect-square bg-ios-lightgray rounded-ios mb-4 flex items-center justify-center">
-                    <svg className="w-12 h-12 text-ios-gray" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                  </div>
-                  <h3 className="font-semibold text-sm mb-1 line-clamp-2">
-                    {moment.title}
-                  </h3>
-                  <p className="text-xs text-ios-gray">
-                    {moment.mediaCount} {moment.mediaCount === 1 ? 'photo' : 'photos'}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Download Section */}
       <div className="bg-white py-16 border-t border-gray-200">

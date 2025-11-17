@@ -122,6 +122,7 @@ export const updateTrip = mutation({
     endDate: v.optional(v.number()),
     coverImageName: v.optional(v.string()),
     coverImageStorageId: v.optional(v.id("_storage")),
+    previewImageStorageId: v.optional(v.id("_storage")),
   },
   handler: async (ctx, args) => {
     const userId = await requireAuth(ctx);
@@ -149,6 +150,7 @@ export const updateTrip = mutation({
     if (args.endDate !== undefined) updates.endDate = args.endDate;
     if (args.coverImageName !== undefined) updates.coverImageName = args.coverImageName;
     if (args.coverImageStorageId !== undefined) updates.coverImageStorageId = args.coverImageStorageId;
+    if (args.previewImageStorageId !== undefined) updates.previewImageStorageId = args.previewImageStorageId;
 
     await ctx.db.patch(trip._id, updates);
     return trip._id;
@@ -745,12 +747,11 @@ export const getPublicPreview = query({
       return null;
     }
 
-    // Get moments for this trip (limit to 6 for preview)
+    // Get ALL moments for this trip to render the full canvas
     const moments = await ctx.db
       .query("moments")
       .withIndex("by_tripId", (q) => q.eq("tripId", trip.tripId))
-      .order("desc")
-      .take(6);
+      .collect();
 
     // Get media items for the moments
     const momentMediaItems = await Promise.all(
@@ -767,6 +768,35 @@ export const getPublicPreview = query({
       })
     );
 
+    // Get image URLs for each moment (up to 4 for collage)
+    const momentsWithUrls = await Promise.all(
+      moments.map(async (moment, index) => {
+        const mediaItems = momentMediaItems[index] || [];
+        const mediaUrls: (string | null)[] = [];
+
+        // Get URLs for first 4 media items (for collage display)
+        for (const mediaItem of mediaItems.slice(0, 4)) {
+          if (mediaItem.storageId) {
+            try {
+              const url = await ctx.storage.getUrl(mediaItem.storageId);
+              mediaUrls.push(url);
+            } catch (error) {
+              console.error(`Failed to get URL for storage ID ${mediaItem.storageId}:`, error);
+              mediaUrls.push(null);
+            }
+          }
+        }
+
+        return {
+          momentId: moment.momentId,
+          title: moment.title,
+          gridPosition: moment.gridPosition,
+          mediaCount: mediaItems.length,
+          mediaUrls,
+        };
+      })
+    );
+
     return {
       trip: {
         tripId: trip.tripId,
@@ -776,13 +806,9 @@ export const getPublicPreview = query({
         shareSlug: trip.shareSlug,
         shareCode: trip.shareCode,
         coverImageStorageId: trip.coverImageStorageId,
+        previewImageStorageId: trip.previewImageStorageId,
       },
-      moments: moments.slice(0, 6).map((moment, index) => ({
-        momentId: moment.momentId,
-        title: moment.title,
-        mediaCount: momentMediaItems[index]?.length || 0,
-        firstMediaStorageId: momentMediaItems[index]?.[0]?.storageId,
-      })),
+      moments: momentsWithUrls,
       totalMoments: moments.length,
     };
   },
