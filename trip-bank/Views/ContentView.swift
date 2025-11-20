@@ -14,6 +14,8 @@ struct ContentView: View {
     @State private var selectedTab: TripTab = .myTrips
     @State private var sharedTrips: [Trip] = []
     @State private var isLoadingShared = false
+    @State private var showingProfileSettings = false
+    @State private var needsProfileSetup = false
     @Binding var pendingShareSlug: String?
 
     var body: some View {
@@ -24,6 +26,8 @@ struct ContentView: View {
                     await syncUserToConvex()
                     // Load shared trips on initial load
                     await loadSharedTrips()
+                    // Check if user needs to complete profile setup
+                    checkProfileSetup()
                 }
                 .onChange(of: selectedTab) { _, newTab in
                     if newTab == .sharedWithMe {
@@ -48,6 +52,16 @@ struct ContentView: View {
             print("✅ User synced to Convex: \(user?.email ?? "unknown")")
         } catch {
             print("❌ Failed to sync user to Convex: \(error)")
+        }
+    }
+
+    private func checkProfileSetup() {
+        // Check if user has seen the profile setup screen
+        let hasSeenProfileSetup = UserDefaults.standard.bool(forKey: "hasSeenProfileSetup_\(clerk.user?.id ?? "")")
+
+        // Show setup screen on first login (even if OAuth provided name/photo)
+        if !hasSeenProfileSetup {
+            needsProfileSetup = true
         }
     }
 
@@ -84,9 +98,34 @@ struct ContentView: View {
                         }
                     }
                 }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             }
             .navigationTitle("Rewinded")
             .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button {
+                        showingProfileSettings = true
+                    } label: {
+                        if let imageUrl = clerk.user?.imageUrl {
+                            AsyncImage(url: URL(string: imageUrl)) { image in
+                                image
+                                    .resizable()
+                                    .scaledToFill()
+                            } placeholder: {
+                                Image(systemName: "person.circle.fill")
+                                    .font(.title2)
+                                    .foregroundStyle(.blue)
+                            }
+                            .frame(width: 32, height: 32)
+                            .clipShape(Circle())
+                        } else {
+                            Image(systemName: "person.circle.fill")
+                                .font(.title2)
+                                .foregroundStyle(.blue)
+                        }
+                    }
+                }
+
                 ToolbarItem(placement: .primaryAction) {
                     Button {
                         showingNewTripSheet = true
@@ -112,16 +151,6 @@ struct ContentView: View {
                         } label: {
                             Label("Refresh", systemImage: "arrow.clockwise")
                         }
-
-                        Divider()
-
-                        Button(role: .destructive) {
-                            Task {
-                                try? await clerk.signOut()
-                            }
-                        } label: {
-                            Label("Sign Out", systemImage: "rectangle.portrait.and.arrow.right")
-                        }
                     } label: {
                         Image(systemName: "ellipsis.circle")
                     }
@@ -132,6 +161,12 @@ struct ContentView: View {
             }
             .sheet(isPresented: $showingJoinTrip) {
                 JoinTripView()
+            }
+            .sheet(isPresented: $showingProfileSettings) {
+                ProfileSettingsView()
+            }
+            .fullScreenCover(isPresented: $needsProfileSetup) {
+                ProfileSetupView()
             }
         }
     }
@@ -193,6 +228,7 @@ struct ContentView: View {
             Image(systemName: "person.2")
                 .font(.system(size: 70))
                 .foregroundStyle(.secondary)
+                .padding(.top, 40)
 
             Text("No Shared Trips")
                 .font(.title2)

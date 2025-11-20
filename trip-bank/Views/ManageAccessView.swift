@@ -203,19 +203,43 @@ struct PermissionRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            // Avatar circle with initials
-            ZStack {
-                Circle()
-                    .fill(roleColor.opacity(0.2))
-                    .frame(width: 44, height: 44)
+            // Avatar - profile picture or initials
+            if let imageUrl = permission.user?.imageUrl, !imageUrl.isEmpty {
+                AsyncImage(url: URL(string: imageUrl)) { image in
+                    image
+                        .resizable()
+                        .scaledToFill()
+                } placeholder: {
+                    Circle()
+                        .fill(roleColor.opacity(0.2))
+                        .overlay {
+                            if let name = permission.user?.name, let first = name.first {
+                                Text(String(first).uppercased())
+                                    .font(.system(size: 18, weight: .semibold))
+                                    .foregroundStyle(roleColor)
+                            } else {
+                                Image(systemName: "person.fill")
+                                    .foregroundStyle(roleColor)
+                            }
+                        }
+                }
+                .frame(width: 44, height: 44)
+                .clipShape(Circle())
+            } else {
+                // Fallback to initials if no image
+                ZStack {
+                    Circle()
+                        .fill(roleColor.opacity(0.2))
+                        .frame(width: 44, height: 44)
 
-                if let name = permission.user?.name, let first = name.first {
-                    Text(String(first).uppercased())
-                        .font(.system(size: 18, weight: .semibold))
-                        .foregroundStyle(roleColor)
-                } else {
-                    Image(systemName: "person.fill")
-                        .foregroundStyle(roleColor)
+                    if let name = permission.user?.name, let first = name.first {
+                        Text(String(first).uppercased())
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundStyle(roleColor)
+                    } else {
+                        Image(systemName: "person.fill")
+                            .foregroundStyle(roleColor)
+                    }
                 }
             }
 

@@ -187,22 +187,49 @@ struct TripDetailView: View {
         HStack(spacing: -8) {
             ForEach(permissions.prefix(3), id: \.id) { permission in
                 ZStack {
+                    // White border
                     Circle()
                         .fill(.white)
                         .frame(width: 26, height: 26)
 
-                    Circle()
-                        .fill(avatarColor(for: permission.role).opacity(0.3))
+                    // Avatar - profile picture or initials
+                    if let imageUrl = permission.user?.imageUrl, !imageUrl.isEmpty {
+                        AsyncImage(url: URL(string: imageUrl)) { image in
+                            image
+                                .resizable()
+                                .scaledToFill()
+                        } placeholder: {
+                            Circle()
+                                .fill(avatarColor(for: permission.role).opacity(0.3))
+                                .overlay {
+                                    if let name = permission.user?.name, let first = name.first {
+                                        Text(String(first).uppercased())
+                                            .font(.system(size: 10, weight: .semibold))
+                                            .foregroundStyle(avatarColor(for: permission.role))
+                                    } else {
+                                        Image(systemName: "person.fill")
+                                            .font(.system(size: 10))
+                                            .foregroundStyle(avatarColor(for: permission.role))
+                                    }
+                                }
+                        }
                         .frame(width: 24, height: 24)
-
-                    if let name = permission.user?.name, let first = name.first {
-                        Text(String(first).uppercased())
-                            .font(.system(size: 10, weight: .semibold))
-                            .foregroundStyle(avatarColor(for: permission.role))
+                        .clipShape(Circle())
                     } else {
-                        Image(systemName: "person.fill")
-                            .font(.system(size: 10))
-                            .foregroundStyle(avatarColor(for: permission.role))
+                        // Fallback to initials
+                        Circle()
+                            .fill(avatarColor(for: permission.role).opacity(0.3))
+                            .frame(width: 24, height: 24)
+
+                        if let name = permission.user?.name, let first = name.first {
+                            Text(String(first).uppercased())
+                                .font(.system(size: 10, weight: .semibold))
+                                .foregroundStyle(avatarColor(for: permission.role))
+                        } else {
+                            Image(systemName: "person.fill")
+                                .font(.system(size: 10))
+                                .foregroundStyle(avatarColor(for: permission.role))
+                        }
                     }
                 }
             }
