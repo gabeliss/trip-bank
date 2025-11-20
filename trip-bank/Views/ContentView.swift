@@ -175,6 +175,7 @@ struct ContentView: View {
         VStack(spacing: 20) {
             ProgressView()
                 .scaleEffect(1.5)
+                .padding(.top, 40)
             Text("Loading trips...")
                 .foregroundStyle(.secondary)
         }
@@ -185,6 +186,7 @@ struct ContentView: View {
             Image(systemName: "camera.on.rectangle")
                 .font(.system(size: 70))
                 .foregroundStyle(.secondary)
+                .padding(.top, 40)
 
             Text("No Trips Yet")
                 .font(.title2)

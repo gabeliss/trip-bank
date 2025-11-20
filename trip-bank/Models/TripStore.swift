@@ -85,8 +85,32 @@ class TripStore: ObservableObject {
                     coverImageName: trip.coverImageName
                 )
 
-                // Update local state
-                trips.append(trip)
+                // Fetch the complete trip details from backend (includes ownerId, userRole, permissions)
+                if let tripDetails = try await convexClient.getTrip(id: trip.id.uuidString) {
+                    let completeTrip = Trip(
+                        id: trip.id,
+                        title: tripDetails.trip.title,
+                        startDate: Date(timeIntervalSince1970: tripDetails.trip.startDate / 1000),
+                        endDate: Date(timeIntervalSince1970: tripDetails.trip.endDate / 1000),
+                        coverImageName: tripDetails.trip.coverImageName,
+                        coverImageStorageId: tripDetails.trip.coverImageStorageId,
+                        mediaItems: [],
+                        moments: [],
+                        ownerId: tripDetails.trip.ownerId,
+                        shareSlug: tripDetails.trip.shareSlug,
+                        shareCode: tripDetails.trip.shareCode,
+                        shareLinkEnabled: tripDetails.trip.shareLinkEnabled ?? false,
+                        permissions: [],
+                        userRole: tripDetails.trip.userRole,
+                        joinedAt: nil
+                    )
+
+                    // Update local state with complete trip data
+                    trips.append(completeTrip)
+                } else {
+                    // Fallback to original trip if fetch fails (shouldn't happen)
+                    trips.append(trip)
+                }
             } catch {
                 errorMessage = "Failed to create trip: \(error.localizedDescription)"
                 print("Error creating trip: \(error)")
