@@ -6,14 +6,17 @@ enum MediaPickerState {
     case previewing([SelectedMediaItem])
     case uploading(current: Int, total: Int)
     case error(String)
+    case storageLimitReached(String)
 }
 
 struct MediaPickerView: View {
     let trip: Trip
     @Environment(\.dismiss) var dismiss
     @EnvironmentObject var tripStore: TripStore
+    @StateObject private var subscriptionManager = SubscriptionManager.shared
 
     @State private var state: MediaPickerState = .selectingFromLibrary
+    @State private var showingSubscriptionView = false
 
     var body: some View {
         Group {
@@ -88,7 +91,58 @@ struct MediaPickerView: View {
                     .navigationTitle("Add Media")
                     .navigationBarTitleDisplayMode(.inline)
                 }
+
+            case .storageLimitReached(let message):
+                NavigationStack {
+                    VStack(spacing: 20) {
+                        Image(systemName: "externaldrive.badge.xmark")
+                            .font(.system(size: 50))
+                            .foregroundStyle(.orange)
+
+                        Text("Storage Limit Reached")
+                            .font(.headline)
+
+                        Text(message)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal)
+
+                        if subscriptionManager.currentTier == .free {
+                            Button {
+                                showingSubscriptionView = true
+                            } label: {
+                                HStack {
+                                    Image(systemName: "crown.fill")
+                                    Text("Upgrade to Pro")
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(Color.blue)
+                                .foregroundStyle(.white)
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                            }
+                            .padding(.horizontal, 40)
+                        }
+
+                        Button("Go Back") {
+                            dismiss()
+                        }
+                        .buttonStyle(.bordered)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Color(.systemBackground))
+                    .navigationTitle("Add Media")
+                    .navigationBarTitleDisplayMode(.inline)
+                }
+                .sheet(isPresented: $showingSubscriptionView) {
+                    SubscriptionView()
+                }
             }
+        }
+        .task {
+            // Refresh storage usage when view appears
+            await subscriptionManager.fetchStorageUsage()
         }
     }
 
@@ -122,28 +176,45 @@ struct MediaPickerView: View {
         let convexClient = ConvexClient.shared
         var newMediaItems: [MediaItem] = []
 
+        // Refresh storage usage before upload
+        await subscriptionManager.fetchStorageUsage()
+
+        // Check if user is at storage limit before starting
+        if let usage = subscriptionManager.storageUsage, usage.isAtLimit {
+            state = .storageLimitReached("You've used all \(usage.limitFormatted) of your storage. Delete some media or upgrade to continue.")
+            return
+        }
+
         for (index, item) in media.enumerated() {
-            state = .uploading(current: index, total: media.count)
+            state = .uploading(current: index + 1, total: media.count)
 
             do {
+                var fileSize: Int = 0
+                var thumbnailSize: Int = 0
                 let storageId: String
                 let thumbnailStorageId: String?
                 let mediaType: MediaType
 
                 if item.isVideo, let videoURL = item.videoURL {
                     // Upload the video file
-                    storageId = try await convexClient.uploadVideo(videoURL)
+                    let videoResult = try await convexClient.uploadVideoWithSize(videoURL)
+                    storageId = videoResult.storageId
+                    fileSize = videoResult.fileSize
 
                     // Upload the thumbnail image if available
                     if let thumbnail = item.image {
-                        thumbnailStorageId = try await convexClient.uploadImage(thumbnail)
+                        let thumbResult = try await convexClient.uploadImageWithSize(thumbnail)
+                        thumbnailStorageId = thumbResult.storageId
+                        thumbnailSize = thumbResult.fileSize
                     } else {
                         thumbnailStorageId = nil
                     }
 
                     mediaType = .video
                 } else if let image = item.image {
-                    storageId = try await convexClient.uploadImage(image)
+                    let imageResult = try await convexClient.uploadImageWithSize(image)
+                    storageId = imageResult.storageId
+                    fileSize = imageResult.fileSize
                     thumbnailStorageId = nil
                     mediaType = .photo
                 } else {
@@ -154,8 +225,18 @@ struct MediaPickerView: View {
                     storageId: storageId,
                     thumbnailStorageId: thumbnailStorageId,
                     type: mediaType,
-                    captureDate: Date()
+                    captureDate: Date(),
+                    fileSize: fileSize,
+                    thumbnailSize: thumbnailSize > 0 ? thumbnailSize : nil
                 ))
+            } catch let error as ConvexError {
+                // Check if it's a storage limit error from backend
+                if case .convexError(let message) = error, message.contains("Storage limit") {
+                    state = .storageLimitReached(message)
+                } else {
+                    state = .error(error.localizedDescription)
+                }
+                return
             } catch {
                 state = .error(error.localizedDescription)
                 return
@@ -165,6 +246,9 @@ struct MediaPickerView: View {
         if !newMediaItems.isEmpty {
             tripStore.addMediaItems(to: trip.id, mediaItems: newMediaItems)
         }
+
+        // Refresh storage usage after upload
+        await subscriptionManager.fetchStorageUsage()
 
         dismiss()
     }

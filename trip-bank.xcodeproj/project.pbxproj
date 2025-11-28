@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		B4B301592ECFD02F00D682AB /* ConvexMobile in Frameworks */ = {isa = PBXBuildFile; productRef = B4B301582ECFD02F00D682AB /* ConvexMobile */; };
+		B4B301AA2EDA482700D682AB /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = B4B301A92EDA482700D682AB /* RevenueCat */; };
 		B4B35F552EC4377E001CC264 /* Clerk in Frameworks */ = {isa = PBXBuildFile; productRef = B4B35F542EC4377E001CC264 /* Clerk */; };
 /* End PBXBuildFile section */
 
@@ -59,6 +60,7 @@
 			files = (
 				B4B35F552EC4377E001CC264 /* Clerk in Frameworks */,
 				B4B301592ECFD02F00D682AB /* ConvexMobile in Frameworks */,
+				B4B301AA2EDA482700D682AB /* RevenueCat in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -121,6 +123,7 @@
 			packageProductDependencies = (
 				B4B35F542EC4377E001CC264 /* Clerk */,
 				B4B301582ECFD02F00D682AB /* ConvexMobile */,
+				B4B301A92EDA482700D682AB /* RevenueCat */,
 			);
 			productName = "trip-bank";
 			productReference = B4B35EDB2EC0102D001CC264 /* trip-bank.app */;
@@ -207,6 +210,7 @@
 			packageReferences = (
 				B4B35F532EC4377E001CC264 /* XCRemoteSwiftPackageReference "clerk-ios" */,
 				B4B301572ECFD02F00D682AB /* XCRemoteSwiftPackageReference "convex-swift" */,
+				B4B301A82EDA482700D682AB /* XCRemoteSwiftPackageReference "purchases-ios" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = B4B35EDC2EC0102D001CC264 /* Products */;
@@ -587,6 +591,14 @@
 				minimumVersion = 0.6.1;
 			};
 		};
+		B4B301A82EDA482700D682AB /* XCRemoteSwiftPackageReference "purchases-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/RevenueCat/purchases-ios.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.49.2;
+			};
+		};
 		B4B35F532EC4377E001CC264 /* XCRemoteSwiftPackageReference "clerk-ios" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/clerk/clerk-ios";
@@ -602,6 +614,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = B4B301572ECFD02F00D682AB /* XCRemoteSwiftPackageReference "convex-swift" */;
 			productName = ConvexMobile;
+		};
+		B4B301A92EDA482700D682AB /* RevenueCat */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B4B301A82EDA482700D682AB /* XCRemoteSwiftPackageReference "purchases-ios" */;
+			productName = RevenueCat;
 		};
 		B4B35F542EC4377E001CC264 /* Clerk */ = {
 			isa = XCSwiftPackageProductDependency;

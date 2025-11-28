@@ -139,13 +139,15 @@ class ConvexClient {
         endDate: Date,
         coverImageName: String? = nil
     ) async throws -> String {
-        let args: [String: Any] = [
+        var args: [String: Any] = [
             "tripId": id,
             "title": title,
             "startDate": Int(startDate.timeIntervalSince1970 * 1000),
-            "endDate": Int(endDate.timeIntervalSince1970 * 1000),
-            "coverImageName": coverImageName as Any
+            "endDate": Int(endDate.timeIntervalSince1970 * 1000)
         ]
+        if let coverImageName = coverImageName {
+            args["coverImageName"] = coverImageName
+        }
         return try await mutation("trips/trips:createTrip", args: args)
     }
 
@@ -190,7 +192,9 @@ class ConvexClient {
         type: String,
         captureDate: Date?,
         note: String?,
-        timestamp: TimeInterval
+        timestamp: TimeInterval,
+        fileSize: Int? = nil,
+        thumbnailSize: Int? = nil
     ) async throws -> String {
         var args: [String: Any] = [
             "mediaItemId": id,
@@ -205,6 +209,8 @@ class ConvexClient {
         if let thumbnailStorageId = thumbnailStorageId { args["thumbnailStorageId"] = thumbnailStorageId }
         if let captureDate = captureDate { args["captureDate"] = Int(captureDate.timeIntervalSince1970 * 1000) }
         if let note = note { args["note"] = note }
+        if let fileSize = fileSize { args["fileSize"] = fileSize }
+        if let thumbnailSize = thumbnailSize { args["thumbnailSize"] = thumbnailSize }
 
         return try await mutation("trips/media:addMediaItem", args: args)
     }
@@ -414,8 +420,20 @@ class ConvexClient {
         }
     }
 
+    /// Result of an upload including storage ID and file size
+    struct UploadResult {
+        let storageId: String
+        let fileSize: Int
+    }
+
     /// Upload an image to Convex storage
     func uploadImage(_ image: UIImage) async throws -> String {
+        let result = try await uploadImageWithSize(image)
+        return result.storageId
+    }
+
+    /// Upload an image to Convex storage and return size
+    func uploadImageWithSize(_ image: UIImage) async throws -> UploadResult {
         // 1. Compress image
         guard let imageData = compressImage(image) else {
             throw ConvexError.convexError(message: "Failed to compress image")
@@ -443,11 +461,17 @@ class ConvexClient {
 
         // 4. Parse response to get storage ID
         let uploadResponse = try JSONDecoder().decode(UploadResponse.self, from: data)
-        return uploadResponse.storageId
+        return UploadResult(storageId: uploadResponse.storageId, fileSize: imageData.count)
     }
 
     /// Upload a video to Convex storage
     func uploadVideo(_ videoURL: URL) async throws -> String {
+        let result = try await uploadVideoWithSize(videoURL)
+        return result.storageId
+    }
+
+    /// Upload a video to Convex storage and return size
+    func uploadVideoWithSize(_ videoURL: URL) async throws -> UploadResult {
         // 1. Read video data
         guard let videoData = try? Data(contentsOf: videoURL) else {
             throw ConvexError.convexError(message: "Failed to read video file")
@@ -475,7 +499,56 @@ class ConvexClient {
 
         // 4. Parse response to get storage ID
         let uploadResponse = try JSONDecoder().decode(UploadResponse.self, from: data)
-        return uploadResponse.storageId
+        return UploadResult(storageId: uploadResponse.storageId, fileSize: videoData.count)
+    }
+
+    // MARK: - Storage & Subscription
+
+    /// Get current user's storage usage
+    func getStorageUsage() async throws -> StorageUsageResponse? {
+        let url = URL(string: "\(baseURL)/api/query")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        if let token = await getAuthToken() {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+
+        let body: [String: Any] = [
+            "path": "storage:getStorageUsage",
+            "args": [:]
+        ]
+
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+            throw ConvexError.invalidResponse
+        }
+
+        let convexResponse = try JSONDecoder().decode(ConvexResponse<StorageUsageResponse?>.self, from: data)
+
+        if convexResponse.status == "success" {
+            return convexResponse.value
+        } else {
+            throw ConvexError.convexError(message: convexResponse.errorMessage ?? "Unknown error")
+        }
+    }
+
+    /// Update user's subscription (called after RevenueCat purchase)
+    func updateSubscription(tier: String, expiresAt: Int?, revenueCatUserId: String?) async throws {
+        var args: [String: Any] = ["tier": tier]
+        if let expiresAt = expiresAt { args["expiresAt"] = expiresAt }
+        if let revenueCatUserId = revenueCatUserId { args["revenueCatUserId"] = revenueCatUserId }
+
+        let _: SuccessResponse = try await mutation("storage:updateSubscription", args: args)
+    }
+
+    /// Recalculate storage usage (useful for fixing discrepancies)
+    func recalculateStorageUsage() async throws -> RecalculateResponse {
+        return try await mutation("storage:recalculateStorageUsage", args: [:])
     }
 
     /// Compress image to reasonable size for storage

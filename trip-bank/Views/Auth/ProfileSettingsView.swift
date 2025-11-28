@@ -4,10 +4,12 @@ import Clerk
 struct ProfileSettingsView: View {
     @Environment(\.clerk) private var clerk
     @Environment(\.dismiss) private var dismiss
+    @StateObject private var subscriptionManager = SubscriptionManager.shared
     @State private var showingSignOutConfirmation = false
     @State private var showingDeleteAccountConfirmation = false
     @State private var showingFinalDeleteWarning = false
     @State private var isDeleting = false
+    @State private var showingSubscriptionView = false
 
     var body: some View {
         NavigationStack {
@@ -61,15 +63,47 @@ struct ProfileSettingsView: View {
                     Text("Account")
                 }
 
-                // Subscription Section (Coming Soon)
+                // Storage & Subscription Section
                 Section {
-                    NavigationLink {
-                        ComingSoonView(feature: "Subscription Management")
-                    } label: {
-                        Label("Manage Subscription", systemImage: "crown.fill")
+                    // Storage usage row
+                    if let usage = subscriptionManager.storageUsage {
+                        Button {
+                            showingSubscriptionView = true
+                        } label: {
+                            StorageUsageCompactView(usage: usage)
+                        }
+                        .buttonStyle(.plain)
+                    } else {
+                        HStack {
+                            Label("Storage", systemImage: "externaldrive.fill")
+                            Spacer()
+                            ProgressView()
+                                .scaleEffect(0.8)
+                        }
                     }
+
+                    // Subscription row
+                    Button {
+                        showingSubscriptionView = true
+                    } label: {
+                        HStack {
+                            Label("Subscription", systemImage: "crown.fill")
+                                .foregroundStyle(subscriptionManager.currentTier == .pro ? .yellow : .primary)
+                            Spacer()
+                            Text(subscriptionManager.currentTier.displayName)
+                                .foregroundStyle(.secondary)
+                            Image(systemName: "chevron.right")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .buttonStyle(.plain)
                 } header: {
-                    Text("Subscription")
+                    Text("Storage & Subscription")
+                } footer: {
+                    if subscriptionManager.currentTier == .free {
+                        Text("Upgrade to Pro for 10 GB of storage")
+                    }
                 }
 
                 // Support Section
@@ -190,6 +224,13 @@ struct ProfileSettingsView: View {
                         )
                     }
                 }
+            }
+            .sheet(isPresented: $showingSubscriptionView) {
+                SubscriptionView()
+            }
+            .task {
+                await subscriptionManager.fetchStorageUsage()
+                await subscriptionManager.identifyUser()
             }
         }
     }

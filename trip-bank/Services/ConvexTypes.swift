@@ -131,6 +131,26 @@ struct JoinTripResponse: Decodable {
     let alreadyMember: Bool
 }
 
+// MARK: - Storage & Subscription Types
+
+struct StorageUsageResponse: Decodable {
+    let usedBytes: Int
+    let limitBytes: Int
+    let tier: String
+    let percentUsed: Double
+    let remainingBytes: Int
+    let isAtLimit: Bool
+}
+
+struct SuccessResponse: Decodable {
+    let success: Bool
+}
+
+struct RecalculateResponse: Decodable {
+    let totalBytes: Int
+    let mediaItemCount: Int
+}
+
 struct TripPermissionWithUser: Decodable {
     let id: String
     let userId: String

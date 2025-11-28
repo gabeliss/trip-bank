@@ -2,6 +2,7 @@ import { mutation, query } from "../_generated/server";
 import { v } from "convex/values";
 import { requireAuth } from "../auth";
 import { canUserEdit } from "./permissions";
+import { STORAGE_LIMITS } from "../storage";
 
 // ============= MEDIA MUTATIONS =============
 
@@ -18,6 +19,8 @@ export const addMediaItem = mutation({
     captureDate: v.optional(v.number()),
     note: v.optional(v.string()),
     timestamp: v.number(),
+    fileSize: v.optional(v.number()), // Size in bytes
+    thumbnailSize: v.optional(v.number()), // Thumbnail size in bytes
   },
   handler: async (ctx, args) => {
     const userId = await requireAuth(ctx);
@@ -25,6 +28,28 @@ export const addMediaItem = mutation({
     // Check permission to edit trip
     if (!(await canUserEdit(ctx, args.tripId, userId))) {
       throw new Error("You don't have permission to add media to this trip");
+    }
+
+    // Get user to check storage limit
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerkId", (q) => q.eq("clerkId", userId))
+      .first();
+
+    if (user) {
+      const tier = user.subscriptionTier || "free";
+      const limit = STORAGE_LIMITS[tier];
+      const currentUsage = user.storageUsedBytes || 0;
+      const newFileSize = (args.fileSize || 0) + (args.thumbnailSize || 0);
+
+      if (currentUsage + newFileSize > limit) {
+        throw new Error("Storage limit exceeded. Please upgrade to Pro for more storage.");
+      }
+
+      // Update user's storage usage
+      await ctx.db.patch(user._id, {
+        storageUsedBytes: currentUsage + newFileSize,
+      });
     }
 
     const now = Date.now();
@@ -41,6 +66,8 @@ export const addMediaItem = mutation({
       captureDate: args.captureDate,
       note: args.note,
       timestamp: args.timestamp,
+      fileSize: args.fileSize,
+      thumbnailSize: args.thumbnailSize,
       createdAt: now,
       updatedAt: now,
     });
@@ -143,6 +170,9 @@ export const deleteMediaItem = mutation({
       }
     }
 
+    // Calculate storage to reclaim
+    const bytesToReclaim = (mediaItem.fileSize || 0) + (mediaItem.thumbnailSize || 0);
+
     // Delete file from storage if it exists
     if (mediaItem.storageId) {
       await ctx.storage.delete(mediaItem.storageId);
@@ -151,6 +181,21 @@ export const deleteMediaItem = mutation({
     // Delete thumbnail from storage if it exists
     if (mediaItem.thumbnailStorageId) {
       await ctx.storage.delete(mediaItem.thumbnailStorageId);
+    }
+
+    // Reclaim storage for the media owner (not necessarily current user)
+    if (bytesToReclaim > 0) {
+      const mediaOwner = await ctx.db
+        .query("users")
+        .withIndex("by_clerkId", (q) => q.eq("clerkId", mediaItem.userId))
+        .first();
+
+      if (mediaOwner) {
+        const currentUsage = mediaOwner.storageUsedBytes || 0;
+        await ctx.db.patch(mediaOwner._id, {
+          storageUsedBytes: Math.max(0, currentUsage - bytesToReclaim),
+        });
+      }
     }
 
     // Delete the media item

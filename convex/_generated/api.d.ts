@@ -10,6 +10,7 @@
 
 import type * as auth from "../auth.js";
 import type * as files from "../files.js";
+import type * as storage from "../storage.js";
 import type * as trips_media from "../trips/media.js";
 import type * as trips_moments from "../trips/moments.js";
 import type * as trips_permissions from "../trips/permissions.js";
@@ -26,6 +27,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   files: typeof files;
+  storage: typeof storage;
   "trips/media": typeof trips_media;
   "trips/moments": typeof trips_moments;
   "trips/permissions": typeof trips_permissions;

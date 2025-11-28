@@ -1,5 +1,5 @@
 {
-  "originHash" : "dd597e6a02fba2aa0b45746b15269390d8a7366cb8e101f4259eab51a2fcda79",
+  "originHash" : "43db8ac103b76644d629ea4aaa81ee17698845a53809594a8f552570dba52a17",
   "pins" : [
     {
       "identity" : "clerk-ios",
@@ -53,6 +53,15 @@
       "state" : {
         "revision" : "6f736377e2353040a48fdc39d93385c4108c8dce",
         "version" : "4.1.9"
+      }
+    },
+    {
+      "identity" : "purchases-ios",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/RevenueCat/purchases-ios.git",
+      "state" : {
+        "revision" : "db54c3955115a5bc968db5a29737104638aeba93",
+        "version" : "5.49.2"
       }
     },
     {

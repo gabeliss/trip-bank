@@ -16,6 +16,8 @@ struct MediaItem: Identifiable, Codable {
     var captureDate: Date?
     var note: String?
     var timestamp: Date // When added to the trip
+    var fileSize: Int? // Size in bytes of main file
+    var thumbnailSize: Int? // Size in bytes of thumbnail (for videos)
 
     init(id: UUID = UUID(),
          storageId: String? = nil,
@@ -25,7 +27,9 @@ struct MediaItem: Identifiable, Codable {
          type: MediaType = .photo,
          captureDate: Date? = nil,
          note: String? = nil,
-         timestamp: Date = Date()) {
+         timestamp: Date = Date(),
+         fileSize: Int? = nil,
+         thumbnailSize: Int? = nil) {
         self.id = id
         self.storageId = storageId
         self.thumbnailStorageId = thumbnailStorageId
@@ -35,6 +39,8 @@ struct MediaItem: Identifiable, Codable {
         self.captureDate = captureDate
         self.note = note
         self.timestamp = timestamp
+        self.fileSize = fileSize
+        self.thumbnailSize = thumbnailSize
     }
 
     var displayDate: String? {

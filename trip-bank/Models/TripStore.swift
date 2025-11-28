@@ -318,7 +318,9 @@ class TripStore: ObservableObject {
                         type: mediaItem.type.rawValue,
                         captureDate: mediaItem.captureDate,
                         note: mediaItem.note,
-                        timestamp: mediaItem.timestamp.timeIntervalSince1970
+                        timestamp: mediaItem.timestamp.timeIntervalSince1970,
+                        fileSize: mediaItem.fileSize,
+                        thumbnailSize: mediaItem.thumbnailSize
                     )
                 }
 

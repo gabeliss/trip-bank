@@ -9,6 +9,14 @@ export default defineSchema({
     name: v.optional(v.string()),
     imageUrl: v.optional(v.string()),
     createdAt: v.number(),
+
+    // Storage tracking
+    storageUsedBytes: v.optional(v.number()), // Total bytes used by this user
+
+    // Subscription (synced from RevenueCat)
+    subscriptionTier: v.optional(v.union(v.literal("free"), v.literal("pro"))),
+    subscriptionExpiresAt: v.optional(v.number()), // Timestamp when subscription expires
+    revenueCatUserId: v.optional(v.string()), // RevenueCat customer ID
   }).index("by_clerkId", ["clerkId"]),
 
   trips: defineTable({
@@ -52,6 +60,10 @@ export default defineSchema({
     captureDate: v.optional(v.number()), // Timestamp
     note: v.optional(v.string()),
     timestamp: v.number(), // When added to trip
+
+    // Storage tracking
+    fileSize: v.optional(v.number()), // Size in bytes of the main file
+    thumbnailSize: v.optional(v.number()), // Size in bytes of thumbnail (for videos)
 
     // Timestamps
     createdAt: v.number(),
