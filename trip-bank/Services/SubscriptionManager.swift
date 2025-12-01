@@ -64,10 +64,7 @@ struct StorageUsage {
 class SubscriptionManager: NSObject, ObservableObject {
     static let shared = SubscriptionManager()
 
-    // RevenueCat configuration
-    private static let revenueCatAPIKey = "appl_hRZHpYyZEwGkIoBpcPfJQCkTXdx"
-
-    // Product identifiers (configure these in RevenueCat dashboard)
+    // Product identifiers (must match RevenueCat dashboard and StoreKit config)
     static let proMonthlyProductId = "com.rewinded.pro.monthly"
     static let proYearlyProductId = "com.rewinded.pro.yearly"
 
@@ -80,20 +77,8 @@ class SubscriptionManager: NSObject, ObservableObject {
 
     private override init() {
         super.init()
-        // Configure RevenueCat
-        configureRevenueCat()
-    }
-
-    // MARK: - Configuration
-
-    private func configureRevenueCat() {
-        #if DEBUG
-        Purchases.logLevel = .debug
-        #endif
-
-        Purchases.configure(withAPIKey: Self.revenueCatAPIKey)
-
         // Set up delegate for real-time updates
+        // Note: RevenueCat is configured in TripBankApp.init()
         Purchases.shared.delegate = self
     }
 

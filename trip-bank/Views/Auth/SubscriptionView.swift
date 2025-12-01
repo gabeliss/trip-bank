@@ -319,6 +319,7 @@ struct PackageOptionView: View {
                 }
             }
             .padding()
+            .frame(maxWidth: .infinity)
             .background(
                 RoundedRectangle(cornerRadius: 12)
                     .stroke(isSelected ? Color.blue : Color.gray.opacity(0.3), lineWidth: isSelected ? 2 : 1)
@@ -327,6 +328,7 @@ struct PackageOptionView: View {
                             .fill(isSelected ? Color.blue.opacity(0.1) : Color.clear)
                     )
             )
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }

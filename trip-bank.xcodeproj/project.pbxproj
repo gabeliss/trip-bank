@@ -30,6 +30,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		B4B301B02EDA600000D682AB /* RewindedStore.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = RewindedStore.storekit; sourceTree = "<group>"; };
 		B4B35EDB2EC0102D001CC264 /* trip-bank.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "trip-bank.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		B4B35EEB2EC01030001CC264 /* trip-bankTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "trip-bankTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		B4B35EF52EC01030001CC264 /* trip-bankUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "trip-bankUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -84,6 +85,7 @@
 		B4B35ED22EC0102D001CC264 = {
 			isa = PBXGroup;
 			children = (
+				B4B301B02EDA600000D682AB /* RewindedStore.storekit */,
 				B4B35EDD2EC0102D001CC264 /* trip-bank */,
 				B4B35EEE2EC01030001CC264 /* trip-bankTests */,
 				B4B35EF82EC01030001CC264 /* trip-bankUITests */,

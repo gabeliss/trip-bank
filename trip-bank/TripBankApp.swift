@@ -1,11 +1,25 @@
 import SwiftUI
 import Clerk
+import RevenueCat
 
 @main
 struct TripBankApp: App {
     @StateObject private var tripStore = TripStore()
     @State private var clerk = Clerk.shared
     @State private var pendingShareSlug: String?
+
+    init() {
+        // Configure RevenueCat at app launch
+        Purchases.logLevel = .debug
+
+        #if DEBUG
+        // Use test API key for StoreKit testing in simulator/debug builds
+        Purchases.configure(withAPIKey: "test_KPzYsqSoDJNXtANifSJSBXjJwoA")
+        #else
+        // Use production API key for release builds
+        Purchases.configure(withAPIKey: "appl_hRZHpYyZEwGkIoBpcPfJQCkTXdx")
+        #endif
+    }
 
     var body: some Scene {
         WindowGroup {
