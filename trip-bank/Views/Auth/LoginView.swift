@@ -16,11 +16,11 @@ struct LoginView: View {
                 .foregroundStyle(.blue.gradient)
 
             // Title
-            Text("TripBank")
+            Text("Rewinded")
                 .font(.largeTitle)
                 .fontWeight(.bold)
 
-            Text("Your travel memories, beautifully organized")
+            Text("Your memories, beautifully organized")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)

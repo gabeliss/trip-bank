@@ -27,7 +27,13 @@ struct TripBankApp: App {
                 .environmentObject(tripStore)
                 .environment(\.clerk, clerk)
                 .task {
+                    #if DEBUG
+                    // Use test publishable key for development
                     clerk.configure(publishableKey: "pk_test_bWFnaWNhbC1sYWJyYWRvci0xNy5jbGVyay5hY2NvdW50cy5kZXYk")
+                    #else
+                    // Use production publishable key for release builds
+                    clerk.configure(publishableKey: "pk_live_Y2xlcmsucmV3aW5kZWQuYXBwJA")
+                    #endif
                     try? await clerk.load()
                 }
                 .onOpenURL { url in

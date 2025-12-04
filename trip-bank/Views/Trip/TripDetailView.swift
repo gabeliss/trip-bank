@@ -217,69 +217,73 @@ struct TripDetailView: View {
     }
 
     private var collaboratorAvatars: some View {
-        HStack(spacing: -8) {
-            ForEach(permissions.prefix(3), id: \.id) { permission in
-                ZStack {
-                    // White border
-                    Circle()
-                        .fill(.white)
-                        .frame(width: 26, height: 26)
+        Button {
+            showingManageAccess = true
+        } label: {
+            HStack(spacing: -8) {
+                ForEach(permissions.prefix(3), id: \.id) { permission in
+                    ZStack {
+                        // White border
+                        Circle()
+                            .fill(.white)
+                            .frame(width: 26, height: 26)
 
-                    // Avatar - profile picture or initials
-                    if let imageUrl = permission.user?.imageUrl, !imageUrl.isEmpty {
-                        AsyncImage(url: URL(string: imageUrl)) { image in
-                            image
-                                .resizable()
-                                .scaledToFill()
-                        } placeholder: {
+                        // Avatar - profile picture or initials
+                        if let imageUrl = permission.user?.imageUrl, !imageUrl.isEmpty {
+                            AsyncImage(url: URL(string: imageUrl)) { image in
+                                image
+                                    .resizable()
+                                    .scaledToFill()
+                            } placeholder: {
+                                Circle()
+                                    .fill(avatarColor(for: permission.role).opacity(0.3))
+                                    .overlay {
+                                        if let name = permission.user?.name, let first = name.first {
+                                            Text(String(first).uppercased())
+                                                .font(.system(size: 10, weight: .semibold))
+                                                .foregroundStyle(avatarColor(for: permission.role))
+                                        } else {
+                                            Image(systemName: "person.fill")
+                                                .font(.system(size: 10))
+                                                .foregroundStyle(avatarColor(for: permission.role))
+                                        }
+                                    }
+                            }
+                            .frame(width: 24, height: 24)
+                            .clipShape(Circle())
+                        } else {
+                            // Fallback to initials
                             Circle()
                                 .fill(avatarColor(for: permission.role).opacity(0.3))
-                                .overlay {
-                                    if let name = permission.user?.name, let first = name.first {
-                                        Text(String(first).uppercased())
-                                            .font(.system(size: 10, weight: .semibold))
-                                            .foregroundStyle(avatarColor(for: permission.role))
-                                    } else {
-                                        Image(systemName: "person.fill")
-                                            .font(.system(size: 10))
-                                            .foregroundStyle(avatarColor(for: permission.role))
-                                    }
-                                }
-                        }
-                        .frame(width: 24, height: 24)
-                        .clipShape(Circle())
-                    } else {
-                        // Fallback to initials
-                        Circle()
-                            .fill(avatarColor(for: permission.role).opacity(0.3))
-                            .frame(width: 24, height: 24)
+                                .frame(width: 24, height: 24)
 
-                        if let name = permission.user?.name, let first = name.first {
-                            Text(String(first).uppercased())
-                                .font(.system(size: 10, weight: .semibold))
-                                .foregroundStyle(avatarColor(for: permission.role))
-                        } else {
-                            Image(systemName: "person.fill")
-                                .font(.system(size: 10))
-                                .foregroundStyle(avatarColor(for: permission.role))
+                            if let name = permission.user?.name, let first = name.first {
+                                Text(String(first).uppercased())
+                                    .font(.system(size: 10, weight: .semibold))
+                                    .foregroundStyle(avatarColor(for: permission.role))
+                            } else {
+                                Image(systemName: "person.fill")
+                                    .font(.system(size: 10))
+                                    .foregroundStyle(avatarColor(for: permission.role))
+                            }
                         }
                     }
                 }
-            }
 
-            if permissions.count > 3 {
-                ZStack {
-                    Circle()
-                        .fill(.white)
-                        .frame(width: 26, height: 26)
+                if permissions.count > 3 {
+                    ZStack {
+                        Circle()
+                            .fill(.white)
+                            .frame(width: 26, height: 26)
 
-                    Circle()
-                        .fill(.gray.opacity(0.2))
-                        .frame(width: 24, height: 24)
+                        Circle()
+                            .fill(.gray.opacity(0.2))
+                            .frame(width: 24, height: 24)
 
-                    Text("+\(permissions.count - 3)")
-                        .font(.system(size: 9, weight: .semibold))
-                        .foregroundStyle(.gray)
+                        Text("+\(permissions.count - 3)")
+                            .font(.system(size: 9, weight: .semibold))
+                            .foregroundStyle(.gray)
+                    }
                 }
             }
         }

@@ -106,3 +106,5 @@ node_modules/
 *.key
 TripBankAuthKey.p8
 generate-apple-secret.js
+
+client_secret*.json

@@ -15,9 +15,9 @@ struct ManageAccessView: View {
         tripStore.isOwner(trip: trip)
     }
 
-    // Check if current user can manage (owner or collaborator)
-    private var canManage: Bool {
-        tripStore.canEdit(trip: trip) || isOwner
+    // Check if current user is a collaborator
+    private var isCollaborator: Bool {
+        tripStore.canEdit(trip: trip) && !isOwner
     }
 
     var body: some View {
@@ -60,7 +60,7 @@ struct ManageAccessView: View {
                                 PermissionRow(
                                     permission: permission,
                                     isOwner: isOwner,
-                                    canManage: canManage,
+                                    isCollaborator: isCollaborator,
                                     onRoleChange: { newRole in
                                         Task {
                                             await updateRole(permission: permission, newRole: newRole)
@@ -168,9 +168,18 @@ struct ManageAccessView: View {
 struct PermissionRow: View {
     let permission: TripPermissionWithUser
     let isOwner: Bool
-    let canManage: Bool
+    let isCollaborator: Bool
     let onRoleChange: (String) -> Void
     let onRemove: () -> Void
+
+    // Owner can edit anyone (except themselves)
+    // Collaborator can only edit viewers
+    private var canEditThisUser: Bool {
+        if permission.role == "owner" { return false } // No one can edit owner
+        if isOwner { return true } // Owner can edit collaborators and viewers
+        if isCollaborator && permission.role == "viewer" { return true } // Collaborator can edit viewers
+        return false
+    }
 
     private var displayName: String {
         permission.user?.name ?? permission.user?.email ?? "Unknown User"
@@ -259,22 +268,8 @@ struct PermissionRow: View {
             Spacer()
 
             // Role badge and actions
-            if permission.role == "owner" {
-                // Owner badge (can't change)
-                HStack(spacing: 4) {
-                    Image(systemName: roleIcon)
-                        .font(.caption)
-                    Text("Owner")
-                        .font(.caption)
-                        .fontWeight(.medium)
-                }
-                .foregroundStyle(roleColor)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 6)
-                .background(roleColor.opacity(0.15))
-                .cornerRadius(8)
-            } else if canManage {
-                // Show menu for non-owners if user can manage
+            if canEditThisUser {
+                // Show menu if user can edit this permission
                 Menu {
                     if permission.role == "viewer" {
                         Button {
@@ -290,6 +285,7 @@ struct PermissionRow: View {
                         }
                     }
 
+                    // Only owner can remove users
                     if isOwner {
                         Divider()
 
@@ -316,7 +312,7 @@ struct PermissionRow: View {
                     .cornerRadius(8)
                 }
             } else {
-                // Just show role badge (viewer can see but not change)
+                // Just show role badge (can't edit this user)
                 HStack(spacing: 4) {
                     Image(systemName: roleIcon)
                         .font(.caption)

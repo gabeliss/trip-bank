@@ -42,7 +42,7 @@ interface TripPreview {
 
 async function getTripData(slug: string): Promise<TripPreview | null> {
   try {
-    const data = await convex.query('trips:getPublicPreview' as any, {
+    const data = await convex.query('trips/public:getPublicPreview' as any, {
       shareSlug: slug,
     });
     console.log('📊 Trip data:', JSON.stringify(data, null, 2));
