@@ -108,14 +108,8 @@ struct ProfileSettingsView: View {
 
                 // Support Section
                 Section {
-                    NavigationLink {
-                        ComingSoonView(feature: "Feature Requests")
-                    } label: {
-                        Label("Submit Feature Request", systemImage: "lightbulb.fill")
-                    }
-
                     Link(destination: URL(string: "mailto:support@tripbank.app")!) {
-                        Label("Contact Support", systemImage: "envelope.fill")
+                        Label("Feedback & Support", systemImage: "envelope.fill")
                     }
                 } header: {
                     Text("Support")
@@ -123,16 +117,24 @@ struct ProfileSettingsView: View {
 
                 // Legal Section
                 Section {
-                    NavigationLink {
-                        ComingSoonView(feature: "Privacy Policy")
-                    } label: {
-                        Label("Privacy Policy", systemImage: "hand.raised.fill")
+                    Link(destination: URL(string: "https://rewinded.app/privacy")!) {
+                        HStack {
+                            Label("Privacy Policy", systemImage: "hand.raised.fill")
+                            Spacer()
+                            Image(systemName: "arrow.up.right")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
                     }
 
-                    NavigationLink {
-                        ComingSoonView(feature: "Terms of Service")
-                    } label: {
-                        Label("Terms of Service", systemImage: "doc.text.fill")
+                    Link(destination: URL(string: "https://rewinded.app/terms")!) {
+                        HStack {
+                            Label("Terms of Service", systemImage: "doc.text.fill")
+                            Spacer()
+                            Image(systemName: "arrow.up.right")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
                     }
                 } header: {
                     Text("Legal")

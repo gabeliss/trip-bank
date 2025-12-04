@@ -100,6 +100,14 @@ export default function Home() {
       {/* Footer */}
       <footer className="py-12 bg-white border-t border-gray-200">
         <div className="max-w-6xl mx-auto px-6 text-center">
+          <div className="flex justify-center gap-6 mb-4">
+            <a href="/privacy" className="text-ios-gray hover:text-ios-blue text-sm">
+              Privacy Policy
+            </a>
+            <a href="/terms" className="text-ios-gray hover:text-ios-blue text-sm">
+              Terms of Service
+            </a>
+          </div>
           <p className="text-ios-gray text-sm">
             © 2025 Rewinded. All rights reserved.
           </p>
