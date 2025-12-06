@@ -141,24 +141,10 @@ struct ContentView: View {
                 }
 
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Menu {
-                        Button {
-                            showingJoinTrip = true
-                        } label: {
-                            Label("Join Trip", systemImage: "ticket")
-                        }
-
-                        Divider()
-
-                        Button {
-                            Task {
-                                await tripStore.loadTrips()
-                            }
-                        } label: {
-                            Label("Refresh", systemImage: "arrow.clockwise")
-                        }
+                    Button {
+                        showingJoinTrip = true
                     } label: {
-                        Image(systemName: "ellipsis.circle")
+                        Image(systemName: "ticket")
                     }
                 }
             }

@@ -7,6 +7,7 @@ enum MediaPickerState {
     case uploading(current: Int, total: Int)
     case error(String)
     case storageLimitReached(String)
+    case storageLimitWarning(media: [SelectedMediaItem], canFit: Int, totalSize: Int64, remainingBytes: Int64)
 }
 
 struct MediaPickerView: View {
@@ -138,6 +139,77 @@ struct MediaPickerView: View {
                 .sheet(isPresented: $showingSubscriptionView) {
                     SubscriptionView()
                 }
+
+            case .storageLimitWarning(let media, let canFit, let totalSize, let remainingBytes):
+                NavigationStack {
+                    VStack(spacing: 20) {
+                        Image(systemName: "externaldrive.badge.exclamationmark")
+                            .font(.system(size: 50))
+                            .foregroundStyle(.orange)
+
+                        Text("Not Enough Storage")
+                            .font(.headline)
+
+                        Text("You selected \(media.count) items (\(formatBytes(totalSize))), but you only have \(formatBytes(remainingBytes)) remaining.")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal)
+
+                        if canFit > 0 {
+                            VStack(spacing: 12) {
+                                Button {
+                                    let itemsToUpload = Array(media.prefix(canFit))
+                                    Task {
+                                        await uploadMedia(itemsToUpload)
+                                    }
+                                } label: {
+                                    Text("Upload First \(canFit) Items")
+                                        .frame(maxWidth: .infinity)
+                                        .padding()
+                                        .background(Color.blue)
+                                        .foregroundStyle(.white)
+                                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                                }
+                                .padding(.horizontal, 40)
+                            }
+                        }
+
+                        if subscriptionManager.currentTier == .free {
+                            Button {
+                                showingSubscriptionView = true
+                            } label: {
+                                HStack {
+                                    Image(systemName: "crown.fill")
+                                    Text("Upgrade to Pro")
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(Color.green)
+                                .foregroundStyle(.white)
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                            }
+                            .padding(.horizontal, 40)
+                        }
+
+                        Button("Select Different Items") {
+                            state = .selectingFromLibrary
+                        }
+                        .buttonStyle(.bordered)
+
+                        Button("Cancel") {
+                            dismiss()
+                        }
+                        .foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Color(.systemBackground))
+                    .navigationTitle("Add Media")
+                    .navigationBarTitleDisplayMode(.inline)
+                }
+                .sheet(isPresented: $showingSubscriptionView) {
+                    SubscriptionView()
+                }
             }
         }
         .task {
@@ -172,6 +244,51 @@ struct MediaPickerView: View {
         }
     }
 
+    /// Estimate the file size of a media item before upload
+    private func estimateSize(of item: SelectedMediaItem) -> Int64 {
+        if item.isVideo, let videoURL = item.videoURL {
+            // Get actual file size for videos
+            if let attrs = try? FileManager.default.attributesOfItem(atPath: videoURL.path),
+               let fileSize = attrs[.size] as? Int64 {
+                return fileSize
+            }
+            return 10 * 1024 * 1024 // Default 10MB estimate for videos
+        } else if let image = item.image {
+            // Estimate JPEG size (images are compressed when uploaded)
+            // Using 0.8 compression quality as a rough estimate
+            if let jpegData = image.jpegData(compressionQuality: 0.8) {
+                return Int64(jpegData.count)
+            }
+            return 2 * 1024 * 1024 // Default 2MB estimate for images
+        }
+        return 1 * 1024 * 1024 // Default 1MB
+    }
+
+    /// Calculate how many items can fit in the remaining storage
+    private func calculateItemsThatFit(_ media: [SelectedMediaItem], remainingBytes: Int64) -> (canFit: Int, totalSize: Int64, sizes: [Int64]) {
+        var sizes: [Int64] = []
+        var totalSize: Int64 = 0
+        var canFit = 0
+        var runningTotal: Int64 = 0
+
+        for item in media {
+            let size = estimateSize(of: item)
+            sizes.append(size)
+            totalSize += size
+
+            if runningTotal + size <= remainingBytes {
+                runningTotal += size
+                canFit += 1
+            }
+        }
+
+        return (canFit, totalSize, sizes)
+    }
+
+    private func formatBytes(_ bytes: Int64) -> String {
+        ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file)
+    }
+
     private func uploadMedia(_ media: [SelectedMediaItem]) async {
         let convexClient = ConvexClient.shared
         var newMediaItems: [MediaItem] = []
@@ -183,6 +300,22 @@ struct MediaPickerView: View {
         if let usage = subscriptionManager.storageUsage, usage.isAtLimit {
             state = .storageLimitReached("You've used all \(usage.limitFormatted) of your storage. Delete some media or upgrade to continue.")
             return
+        }
+
+        // Check if all selected items will fit
+        if let usage = subscriptionManager.storageUsage {
+            let (canFit, totalSize, _) = calculateItemsThatFit(media, remainingBytes: usage.remainingBytes)
+
+            if canFit < media.count {
+                // Not all items will fit - show warning with options
+                state = .storageLimitWarning(
+                    media: media,
+                    canFit: canFit,
+                    totalSize: totalSize,
+                    remainingBytes: usage.remainingBytes
+                )
+                return
+            }
         }
 
         for (index, item) in media.enumerated() {

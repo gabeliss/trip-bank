@@ -175,8 +175,10 @@ export const getAllTrips = query({
     const trips = await ctx.db
       .query("trips")
       .withIndex("by_userId_createdAt", (q) => q.eq("userId", userId))
-      .order("desc")
       .collect();
+
+    // Sort by startDate descending (most recent trips first)
+    trips.sort((a, b) => b.startDate - a.startDate);
 
     // Add userRole for each trip by looking up permissions
     const tripsWithRole = await Promise.all(

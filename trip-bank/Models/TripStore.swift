@@ -101,7 +101,7 @@ class TripStore: ObservableObject {
         let subscription = convexClient.subscribe(
             to: "trips/trips:getTrip",
             with: ["tripId": tripId],
-            yielding: TripDetailsResponse.self
+            yielding: TripDetailsResponse?.self
         )
         .receive(on: DispatchQueue.main)
         .sink(
@@ -111,7 +111,10 @@ class TripStore: ObservableObject {
                 }
             },
             receiveValue: { [weak self] tripDetails in
-                guard let self = self else { return }
+                guard let self = self, let tripDetails = tripDetails else {
+                    print("⚠️ [TripStore] Received null trip details for \(tripId)")
+                    return
+                }
 
                 print("📥 [TripStore] Received trip update for \(tripId)")
                 print("   userRole: \(tripDetails.trip.userRole ?? "nil")")
@@ -138,14 +141,13 @@ class TripStore: ObservableObject {
                     joinedAt: nil
                 )
 
-                // Update the trip in the array
+                // Update the trip in the array (only if it already exists)
+                // Don't add new trips here - shared trips have their own list in ContentView
                 if let index = self.trips.firstIndex(where: { $0.id.uuidString == tripId }) {
                     self.trips[index] = trip
                     print("✅ [TripStore] Updated trip \(tripId) in trips array")
                 } else {
-                    // If not in trips array, add it (this handles shared trips)
-                    self.trips.append(trip)
-                    print("✅ [TripStore] Added trip \(tripId) to trips array")
+                    print("ℹ️ [TripStore] Trip \(tripId) not in trips array (likely a shared trip)")
                 }
             }
         )

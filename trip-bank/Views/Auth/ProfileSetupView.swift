@@ -18,9 +18,11 @@ struct ProfileSetupView: View {
             VStack(spacing: 0) {
                 // Header
                 VStack(spacing: 16) {
-                    Image(systemName: "person.circle.fill")
-                        .font(.system(size: 80))
-                        .foregroundStyle(.blue.gradient)
+                    Image("AppLogo")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 100, height: 100)
+                        .clipShape(RoundedRectangle(cornerRadius: 22))
                         .padding(.top, 40)
 
                     Text("Welcome to Rewinded!")
