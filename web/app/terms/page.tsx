@@ -123,7 +123,7 @@ export default function TermsOfService() {
               <h2 className="text-2xl font-semibold mb-4 text-gray-900">11. Changes to Terms</h2>
               <p className="text-gray-700 leading-relaxed">
                 We may update these terms from time to time. Continued use of Rewinded after changes
-                constitutes acceptance of the new terms. We will notify you of significant changes.
+                constitutes acceptance of the new terms. We will notify you of any significant changes.
               </p>
             </section>
 
