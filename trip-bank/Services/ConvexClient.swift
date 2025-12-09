@@ -13,7 +13,11 @@ import Combine
 class ConvexClient {
     static let shared = ConvexClient()
 
+    #if DEBUG
     private let baseURL = "https://flippant-mongoose-94.convex.cloud"
+    #else
+    private let baseURL = "https://silent-hare-226.convex.cloud"
+    #endif
     private var convexClient: ConvexClientWithAuth<String>!
     private var cancellables = Set<AnyCancellable>()
 
