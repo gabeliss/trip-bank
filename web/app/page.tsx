@@ -17,7 +17,7 @@ export default function Home() {
             <span className="text-xl font-bold text-gray-900">Rewinded</span>
           </div>
           <a
-            href="https://apps.apple.com/app/rewinded"
+            href="https://apps.apple.com/us/app/rewinded/id6755892837"
             className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-gray-900 rounded-full hover:bg-gray-800 transition-all hover:scale-105"
           >
             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
@@ -63,7 +63,7 @@ export default function Home() {
 
                 <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
                   <a
-                    href="https://apps.apple.com/app/rewinded"
+                    href="https://apps.apple.com/us/app/rewinded/id6755892837"
                     className="group inline-flex items-center justify-center gap-3 px-8 py-4 bg-gray-900 text-white rounded-2xl font-semibold text-lg hover:bg-gray-800 transition-all hover:scale-105 shadow-lg shadow-gray-900/25"
                   >
                     <svg className="w-7 h-7" fill="currentColor" viewBox="0 0 24 24">
@@ -327,7 +327,7 @@ export default function Home() {
               Download Rewinded and turn your travel photos into beautiful, shareable stories.
             </p>
             <a
-              href="https://apps.apple.com/app/rewinded"
+              href="https://apps.apple.com/us/app/rewinded/id6755892837"
               className="group inline-flex items-center justify-center gap-3 px-10 py-5 bg-white text-gray-900 rounded-2xl font-semibold text-lg hover:bg-gray-100 transition-all hover:scale-105 shadow-2xl"
             >
               <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
